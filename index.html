@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diagnóstico PDF PDA v3.5 - 11 pruebas y 1 informe</title>
+<style>
+  * {box-sizing:border-box}
+  html {font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#172a42;background:#f3f6fb}
+  body {margin:0} header {background:#163b68;color:#fff;padding:20px 14px}
+  header .inner,main,footer {max-width:810px;margin:auto}
+  h1 {font-size:1.45rem;margin:0 0 6px} h2{font-size:1.12rem;margin:0 0 10px} h3{font-size:1.02rem;margin:0 0 5px}
+  p {line-height:1.45;margin:7px 0 12px} small,.muted{color:#50627a} header small{color:#dae7f9}
+  main {padding:14px} .card {background:#fff;border:1px solid #d8e2ef;border-radius:11px;padding:16px;margin:0 0 13px}
+  .intro {border-left:5px solid #2875bd} .info{background:#eef5ff;border:1px solid #c7dcf6;border-radius:8px;padding:11px;margin:8px 0}
+  .fields {display:grid;grid-template-columns:1fr 1fr;gap:10px 13px} label {display:block;font-size:.92rem;font-weight:600;margin-bottom:5px}
+  select,input,textarea {font:inherit;width:100%;border:1px solid #acbcd0;background:#fff;border-radius:7px;padding:10px;color:#172a42}
+  input,select {min-height:43px} .preview {margin-top:11px;border:1px solid #9faec2;border-radius:6px;background:#eaeef4;min-height:260px;overflow:hidden}
+  iframe,object,embed {width:100%;height:330px;display:block;border:0;background:#fff}
+  canvas {max-width:100%;height:auto;display:block;margin:auto;background:#fff}
+  button,.action {font:inherit;cursor:pointer;display:inline-block;text-decoration:none;font-weight:650;border-radius:8px;padding:10px 13px;border:1px solid #1f5f9f;background:#1f64a9;color:#fff}
+  button:focus,.action:focus,input:focus,select:focus {outline:3px solid #ffc145;outline-offset:2px}
+  button.alt,.action.alt {background:#fff;color:#174d80;border-color:#9bb0c9}
+  button.soft {background:#e9f1fa;color:#194d7b;border-color:#bfd0e5}
+  .test-head {display:flex;align-items:flex-start;gap:12px}
+  .num {flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:#e0edfa;color:#174b77;text-align:center;line-height:30px;font-weight:700}
+  .test-head div:last-child {flex:1}
+  .run {margin-top:8px;min-height:43px}
+  .result-row {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+  .result-button {font-size:.88rem;background:#fff;color:#243e58;border:1px solid #aebed0;padding:10px 7px;min-height:45px;font-weight:600}
+  .result-button.active {background:#0e6038;border-color:#0e6038;color:#fff}
+  .result-button.active[data-result="descarga"] {background:#795009;border-color:#795009}
+  .result-button.active[data-result="blanco"],.result-button.active[data-result="error"] {background:#983c32;border-color:#983c32}
+  .result-button.active[data-result="no-probado"] {background:#576980;border-color:#576980}
+  .status {color:#3f5470;font-size:.88rem;margin:9px 0 0;word-break:break-word;white-space:pre-wrap}
+  .tools {display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .counter {font-weight:700;font-size:1rem;color:#174b77}
+  textarea {resize:vertical;min-height:110px}
+  #report {min-height:240px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.4}
+  code {background:#edf2f8;border-radius:3px;padding:1px 4px;word-break:break-word}
+  footer {padding:3px 14px 25px;color:#63758b;font-size:.79rem}
+  /* Visor de diagnóstico, no requiere compatibilidad PDF nativa para dibujar HTML. */
+  .pdf-modal[hidden] {display:none !important}
+  .pdf-modal {position:fixed;inset:0;background:rgba(12,25,43,.78);z-index:1000;display:flex;align-items:center;justify-content:center;padding:12px}
+  .pdf-modal-panel {background:#fff;border-radius:11px;display:flex;flex-direction:column;width:min(960px,100%);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:hidden}
+  .pdf-modal-head {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #d8e2ef}
+  .pdf-modal-head h2 {margin:0;font-size:1.05rem}
+  .pdf-modal-head button {flex-shrink:0}
+  .pdf-modal-status {padding:8px 14px;margin:0;line-height:1.35;font-size:.88rem;color:#324f6d}
+  .pdf-modal-body {overflow:auto;min-height:150px;padding:8px;background:#e9eef5}
+  .pdf-modal-body iframe {min-height:65vh;min-height:65dvh;height:65vh;height:65dvh;border:0;width:100%;background:#fff}
+  .pdf-modal-body canvas {box-shadow:0 2px 12px #bac7d4}
+  .callout {border-left:4px solid #236c9c;padding:8px 10px;background:#f0f6fc;margin:10px 0}
+  @media(max-width:520px){.fields{grid-template-columns:1fr}.card{padding:13px}.result-row{gap:6px}.result-button{font-size:.83rem}.preview{min-height:215px}iframe,object,embed{height:285px}}
+</style>
+</head>
+<body>
+<header><div class="inner"><h1>Diagnóstico PDF · PDA</h1><small>11 pruebas · 1 informe · Sin capturas · v3.5</small></div></header>
+<main>
+<section class="card intro">
+  <h2>¿Qué tienes que hacer?</h2>
+  <p><strong>1.</strong> Abre esta URL desde la misma aplicación de la PDA donde falla el PDF. <strong>2.</strong> Pulsa <strong>Ejecutar prueba</strong> en cada apartado. <strong>3.</strong> Marca lo que ocurre. <strong>4.</strong> Pulsa <strong>Compartir informe</strong> o <strong>Copiar informe</strong> y envía el texto por Teams o correo.</p>
+  <div class="info"><strong>Importante:</strong> una carga completada NO demuestra que se vea el PDF. Marca «Se ve» solo si puedes leer <strong>PDF DE PRUEBA - PDA</strong> dentro de la página. Esta prueba usa exclusivamente un documento ficticio.</div>
+  <div class="callout"><strong>Pruebas nuevas (8 a 11):</strong> abrir un <code>blob:</code> en otra pestaña, abrir el PDF HTTPS en esta pestaña, iframe dentro de un modal y PDF.js mediante una página HTML independiente dentro del modal. La prueba 6 ya abre un PDF HTTPS en otra pestaña. <strong>Al volver del PDF, utiliza Atrás</strong> y marca lo que ocurrió.</div>
+  <div class="counter" id="counter">0 de 11 pruebas respondidas</div><p class="muted" id="externalStatus">Comprobando que el PDF externo esté publicado…</p>
+</section>
+<section class="card">
+  <h2>Datos de la PDA</h2>
+  <div class="fields">
+    <div><label for="device">Modelo</label><select id="device"><option value="">Seleccionar…</option><option>Honeywell EDA52</option><option>Zebra TC56</option><option>Zebra TC57</option><option>Zelenza ID42</option><option>Otro / no se sabe</option></select></div>
+    <div><label for="android">Versión Android</label><select id="android"><option value="">Seleccionar…</option><option>13</option><option>11</option><option>8.1</option><option>Otra / no se sabe</option></select></div>
+    <div><label for="context">Dónde se abre</label><select id="context"><option value="">Seleccionar…</option><option>App corporativa / navegador integrado</option><option>Chrome independiente</option><option>Otro / no se sabe</option></select></div>
+    <div><label for="group">Colectivo</label><select id="group"><option value="">Seleccionar…</option><option>Reparto</option><option>Oficinas</option><option>Centros</option><option>Recogidas</option><option>Otro</option></select></div>
+  </div>
+  <p class="muted" id="browserInfo">Detectando navegador…</p>
+</section>
+<section class="card test-card" data-test="iframe_blob">
+  <div class="test-head"><span class="num">1</span><div><h3>iframe + blob:</h3><p class="muted">Reproduce el patrón <code>iframe.src = URL.createObjectURL(blob)</code> del frontal.</p></div></div>
+  <button type="button" class="run" data-run="iframe_blob">Ejecutar prueba 1</button>
+  <div id="preview_iframe_blob" class="preview" hidden></div>
+  <div id="status_iframe_blob" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="iframe_blob"></div>
+</section>
+<section class="card test-card" data-test="object_blob">
+  <div class="test-head"><span class="num">2</span><div><h3>object + blob:</h3><p class="muted">Prueba HTML alternativa al iframe.</p></div></div>
+  <button type="button" class="run" data-run="object_blob">Ejecutar prueba 2</button>
+  <div id="preview_object_blob" class="preview" hidden></div>
+  <div id="status_object_blob" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="object_blob"></div>
+</section>
+<section class="card test-card" data-test="embed_blob">
+  <div class="test-head"><span class="num">3</span><div><h3>embed + blob:</h3><p class="muted">Prueba con <code>&lt;embed type="application/pdf"&gt;</code>.</p></div></div>
+  <button type="button" class="run" data-run="embed_blob">Ejecutar prueba 3</button>
+  <div id="preview_embed_blob" class="preview" hidden></div>
+  <div id="status_embed_blob" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="embed_blob"></div>
+</section>
+<section class="card test-card" data-test="iframe_http">
+  <div class="test-head"><span class="num">4</span><div><h3>iframe + URL PDF HTTPS</h3><p class="muted">Incrusta el PDF publicado en la misma carpeta, sin <code>blob:</code>.</p></div></div>
+  <button type="button" class="run" data-run="iframe_http">Ejecutar prueba 4</button>
+  <div id="preview_iframe_http" class="preview" hidden></div>
+  <div id="status_iframe_http" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="iframe_http"></div>
+</section>
+<section class="card test-card" data-test="iframe_data">
+  <div class="test-head"><span class="num">5</span><div><h3>iframe + data: Base64</h3><p class="muted">Abre el mismo PDF mediante <code>data:application/pdf;base64,...</code>.</p></div></div>
+  <button type="button" class="run" data-run="iframe_data">Ejecutar prueba 5</button>
+  <div id="preview_iframe_data" class="preview" hidden></div>
+  <div id="status_iframe_data" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="iframe_data"></div>
+</section>
+<section class="card test-card" data-test="open_direct">
+  <div class="test-head"><span class="num">6</span><div><h3>PDF HTTPS en otra pestaña (sin PDF.js)</h3><p class="muted">Ya estaba en la v3.4: abre un archivo PDF por URL HTTP(S) en pestaña nueva, sin iframe. Puede descargarlo o bloquear nuevas pestañas.</p></div></div>
+  <a id="directLink" class="action" target="_blank" rel="noopener" href="./pdf-prueba-pda.pdf">Prueba 6 · Abrir HTTPS en otra pestaña</a>
+  <div id="status_open_direct" class="status">Después de abrir, vuelve aquí y marca el resultado.</div>
+  <div class="result-row" data-result-for="open_direct"></div>
+</section>
+<section class="card test-card" data-test="pdfjs">
+  <div class="test-head"><span class="num">7</span><div><h3>PDF.js (sin visor nativo)</h3><p class="muted">Renderiza el PDF en un <code>canvas</code> usando la librería JavaScript. Utiliza PDF.js 6.5.438 legacy. Intenta primero una copia local; si falta, utiliza el CDN. El informe registra el origen utilizado. Un bloqueo de la librería no demuestra incompatibilidad del visor.</p></div></div>
+  <button type="button" class="run" data-run="pdfjs">Ejecutar prueba 7</button>
+  <div id="preview_pdfjs" class="preview" hidden></div>
+  <div id="status_pdfjs" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="pdfjs"></div>
+</section>
+<section class="card test-card" data-test="open_blob_tab">
+  <div class="test-head"><span class="num">8</span><div><h3>PDF Blob en otra pestaña (sin PDF.js)</h3><p class="muted">Abre <code>blob:</code> mediante un enlace con <code>target="_blank"</code>, parecido al PDF que recibe el frontal del backend. Comprueba si se abre, se descarga o no ocurre nada.</p></div></div>
+  <button type="button" class="run" data-run="open_blob_tab">Prueba 8 · Abrir Blob en otra pestaña</button>
+  <div id="status_open_blob_tab" class="status">Después de abrir, vuelve aquí y marca el resultado.</div>
+  <div class="result-row" data-result-for="open_blob_tab"></div>
+</section>
+<section class="card test-card" data-test="open_http_same">
+  <div class="test-head"><span class="num">9</span><div><h3>PDF HTTPS en esta pestaña (sin PDF.js)</h3><p class="muted">Navega directamente al PDF sin abrir una ventana nueva. <strong>La página de diagnóstico se sustituirá temporalmente.</strong> Vuelve con Atrás y marca el resultado. Es útil si Chrome/WebView bloquea pestañas nuevas.</p></div></div>
+  <a id="sameTabLink" class="action" href="./pdf-prueba-pda.pdf">Prueba 9 · Abrir HTTPS aquí</a>
+  <div id="status_open_http_same" class="status">Al volver desde el PDF, marca si lo viste, lo descargó o dio error.</div>
+  <div class="result-row" data-result-for="open_http_same"></div>
+</section>
+<section class="card test-card" data-test="iframe_blob_modal">
+  <div class="test-head"><span class="num">10</span><div><h3>PDF Blob en modal con iframe nativo</h3><p class="muted">Repite la técnica actual del iframe, pero dentro de un modal que ocupa casi toda la pantalla. Permite comprobar si el tamaño del contenedor influye. <strong>No utiliza PDF.js.</strong></p></div></div>
+  <button type="button" class="run" data-run="iframe_blob_modal">Prueba 10 · Abrir modal nativo</button>
+  <div id="status_iframe_blob_modal" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="iframe_blob_modal"></div>
+</section>
+<section class="card test-card" data-test="pdfjs_viewer_modal">
+  <div class="test-head"><span class="num">11</span><div><h3>PDF.js independiente en un modal</h3><p class="muted">Abre <code>pdfjs-viewer-independiente.html</code> en un iframe. Esa página carga PDF.js por separado y recibe los bytes ficticios por <code>postMessage</code>: <strong>el iframe muestra HTML/canvas, no incrusta un PDF nativo.</strong> No requiere Babel ni Webpack para este HTML de prueba, pero sí los archivos estáticos de PDF.js de la prueba 7.</p></div></div>
+  <button type="button" class="run" data-run="pdfjs_viewer_modal">Prueba 11 · Abrir visor independiente</button>
+  <div id="status_pdfjs_viewer_modal" class="status">Pendiente de ejecutar.</div>
+  <div class="result-row" data-result-for="pdfjs_viewer_modal"></div>
+</section>
+<section class="card">
+  <h2>Resultado en vuestra web real (opcional)</h2>
+  <label for="realResult">¿Qué ocurre al abrir el PDF de la aplicación corporativa?</label>
+  <select id="realResult"><option value="">No comprobado</option><option value="Se ve">Se ve</option><option value="Descarga">Descarga</option><option value="En blanco">En blanco</option><option value="Error">Error</option></select>
+  <label for="notes" style="margin-top:12px">Observaciones (sin datos personales)</label>
+  <textarea id="notes" rows="3" placeholder="Ejemplo: en la prueba 1 aparece el icono de descarga, y en la 7 se ve el documento."></textarea>
+</section>
+<section class="card" id="sendReport">
+  <h2>Enviar resultado: solo un mensaje</h2>
+  <p>Marca todas las pruebas que puedas. El informe recopila resultados, dispositivo y navegador. <strong>No se envía automáticamente a ningún servidor.</strong></p>
+  <div class="tools">
+    <button type="button" id="shareBtn">Compartir informe</button>
+    <button type="button" class="alt" id="copyBtn">Copiar informe</button>
+    <button type="button" class="soft" id="downloadBtn">Descargar .txt</button>
+  </div>
+  <button type="button" class="alt" id="resetBtn">Reiniciar todas las pruebas</button><p id="shareStatus" class="status" aria-live="polite">Si la PDA bloquea compartir o copiar, mantén pulsado el texto del informe.</p>
+  <label for="report">Informe completo (seleccionable)</label>
+  <textarea id="report" readonly rows="13"></textarea>
+</section>
+</main>
+<div id="pdfModal" class="pdf-modal" role="dialog" aria-modal="true" aria-labelledby="pdfModalTitle" hidden>
+  <div class="pdf-modal-panel">
+    <div class="pdf-modal-head"><h2 id="pdfModalTitle">Prueba de visor PDF</h2><button type="button" class="alt" id="closePdfModal">Cerrar modal</button></div>
+    <p id="pdfModalStatus" class="pdf-modal-status" aria-live="polite">Abriendo…</p>
+    <div id="pdfModalBody" class="pdf-modal-body"></div>
+  </div>
+</div>
+<footer>Diagnóstico técnico orientativo. Los resultados requieren confirmación visual. Dependen de Android, Chrome/WebView, la política de navegación, CSP y el origen de la URL. Versión 3.5 (PDF.js 6.5.438 legacy en pruebas 7/11).</footer>
+<script>
+(function () {
+  'use strict';
+  var pdfB64 = 'JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEgL1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMgOCAwIFIgL01lZGlhQm94IFsgMCAwIDU5NS4yNzU2IDg0MS44ODk4IF0gL1BhcmVudCA3IDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9QYWdlTW9kZSAvVXNlTm9uZSAvUGFnZXMgNyAwIFIgL1R5cGUgL0NhdGFsb2cKPj4KZW5kb2JqCjYgMCBvYmoKPDwKL0F1dGhvciAoYW5vbnltb3VzKSAvQ3JlYXRpb25EYXRlIChEOjIwMDAwMTAxMDAwMDAwKzAwJzAwJykgL0NyZWF0b3IgKGFub255bW91cykgL0tleXdvcmRzICgpIC9Nb2REYXRlIChEOjIwMDAwMTAxMDAwMDAwKzAwJzAwJykgL1Byb2R1Y2VyIChSZXBvcnRMYWIgUERGIExpYnJhcnkgLSBcKG9wZW5zb3VyY2VcKSkgCiAgL1N1YmplY3QgKHVuc3BlY2lmaWVkKSAvVGl0bGUgKHVudGl0bGVkKSAvVHJhcHBlZCAvRmFsc2UKPj4KZW5kb2JqCjcgMCBvYmoKPDwKL0NvdW50IDEgL0tpZHMgWyA0IDAgUiBdIC9UeXBlIC9QYWdlcwo+PgplbmRvYmoKOCAwIG9iago8PAovRmlsdGVyIFsgL0FTQ0lJODVEZWNvZGUgL0ZsYXRlRGVjb2RlIF0gL0xlbmd0aCAzMjEKPj4Kc3RyZWFtCkdhclc0NCY8ZEsmOzlyWCdpUC84aHE/O20uPEErYVU1NlRNbURPb25QYUNBNCZBT2ZBJU09ZXNRIUI6IWhvbVhsQDMzLnE8PEYzdXAqVT4mVE81TTsoLXBiJWY9T0hmJkFfS2NNUSdWPTU2cjwlKC5rSjotKEhFTGJVWC4qTVg2IUk4K0gpNSsmZ3NnYU80a2Yycz9gPG0vMGo5RnMyYyVZVVgkQ09WMU0+PSk/R2Y7YV1zKV8lUVRRVT0taWgoPW5HOGEkP0xLY2krbGMzQz1TT0AqVTRcKCY3Ij46THFTQi01by11LGBNQFVHLjQrX2s4J1pZbWVnVTFwTFZ1SExWcVArQ2MpSyQsJT82Y11VXCRxRzdJciU5bEVMJl0lVTpzKFJJOzVlZGU3V0diT11dZERtPVZtKE5NXEQvQF1+PmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDkKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDYxIDAwMDAwIG4gCjAwMDAwMDAxMDIgMDAwMDAgbiAKMDAwMDAwMDIwOSAwMDAwMCBuIAowMDAwMDAwMzIxIDAwMDAwIG4gCjAwMDAwMDA1MjQgMDAwMDAgbiAKMDAwMDAwMDU5MiAwMDAwMCBuIAowMDAwMDAwODUzIDAwMDAwIG4gCjAwMDAwMDA5MTIgMDAwMDAgbiAKdHJhaWxlcgo8PAovSUQgCls8MWMxNzgxOThmYmRmYTUxYjI1OTk1ZDg5ZDQxMDIwNDM+PDFjMTc4MTk4ZmJkZmE1MWIyNTk5NWQ4OWQ0MTAyMDQzPl0KJSBSZXBvcnRMYWIgZ2VuZXJhdGVkIFBERiBkb2N1bWVudCAtLSBkaWdlc3QgKG9wZW5zb3VyY2UpCgovSW5mbyA2IDAgUgovUm9vdCA1IDAgUgovU2l6ZSA5Cj4+CnN0YXJ0eHJlZgoxMzIzCiUlRU9GCg==';
+  var pdfUrl = './pdf-prueba-pda.pdf';
+  var pdfBytes = null;
+  var blobUrl = '';
+  var names = {
+    iframe_blob:'1. iframe + blob:', object_blob:'2. object + blob:',
+    embed_blob:'3. embed + blob:', iframe_http:'4. iframe + URL HTTPS:',
+    iframe_data:'5. iframe + data Base64:', open_direct:'6. apertura directa:',
+    pdfjs:'7. PDF.js canvas:', open_blob_tab:'8. blob en otra pestaña:',
+    open_http_same:'9. HTTPS en misma pestaña:', iframe_blob_modal:'10. iframe blob en modal:',
+    pdfjs_viewer_modal:'11. PDF.js HTML independiente en modal:'
+  };
+  var keys = ['iframe_blob','object_blob','embed_blob','iframe_http','iframe_data','open_direct','pdfjs','open_blob_tab','open_http_same','iframe_blob_modal','pdfjs_viewer_modal'];
+  var opts = [
+    ['se-ve','Se ve el PDF'], ['descarga','Sale descarga'],
+    ['blanco','En blanco / no abre'], ['error','Error'], ['no-probado','No probado']
+  ];
+  var selections = {};
+  var technical = {};
+  var executed = {};
+  var validationSeq = 0;
+  var resetGeneration = 0;
+  var pendingDirectAt = 0;
+  var pendingBlobAt = 0;
+  var pendingSameTabAt = 0;
+  var modalSeq = 0;
+  var modalTimer = null;
+  var modalTrigger = null;
+  var viewerToken = '';
+  var viewerTarget = null;
+  var resetArmUntil = 0;
+  var resetArmTimer = null;
+  var externalStatus = 'Comprobación aún no realizada';
+  var pdfJsActive = false;
+  var pdfJsSeq = 0;
+  var pdfJsWatchdog = null;
+  var pdfJsLoaderAttempt = 0;
+  var pdfJsLoadPromise = null;
+  var runtimeErrors = [];
+  function addJsError(msg) {
+    if(runtimeErrors.length >= 20) runtimeErrors.shift();
+    runtimeErrors.push(String(msg).slice(0,500));
+    updateReport();
+  }
+
+  function el(id) { return document.getElementById(id); }
+  function setStatus(key, message) { technical[key]=message; el('status_'+key).textContent=message; persist(); updateReport(); }
+  function binaryPDF() {
+    if (pdfBytes) return pdfBytes;
+    var raw=atob(pdfB64), a=new Uint8Array(raw.length), i;
+    for (i=0;i<raw.length;i++) a[i]=raw.charCodeAt(i);
+    pdfBytes=a;
+    return a;
+  }
+  function getBlob() {
+    var arr=binaryPDF();
+    return new Blob([arr], {type:'application/pdf'});
+  }
+  function getBlobURL() {
+    if (!blobUrl) blobUrl=URL.createObjectURL(getBlob());
+    return blobUrl;
+  }
+  function preview(key,tag,url) {
+    var generation=resetGeneration;
+    var holder=el('preview_'+key), node=document.createElement(tag);
+    holder.innerHTML=''; holder.hidden=false;
+    if(tag==='object') {node.type='application/pdf';node.data=url;}
+    else {if(tag==='embed')node.type='application/pdf';node.src=url;}
+    node.setAttribute('title', names[key]);
+    node.addEventListener('load',function(){if(generation===resetGeneration)setStatus(key,'Evento load del elemento: NO confirma que se visualice. Comprueba lo que muestra.');});
+    node.addEventListener('error',function(){if(generation===resetGeneration)setStatus(key,'El elemento emitió un error de carga.');});
+    holder.appendChild(node);
+    setStatus(key,'Prueba lanzada. Comprueba visualmente si ves el texto PDF DE PRUEBA - PDA.');
+  }
+  function validateExternalPdf() {
+    var seq=++validationSeq;
+    externalStatus='Comprobando PDF externo…';
+    el('externalStatus').textContent=externalStatus;
+    updateReport();
+    return fetch(pdfUrl,{cache:'no-store'}).then(function(r){
+      var ct=(r.headers.get('content-type')||'').toLowerCase();
+      if(!r.ok) throw new Error('HTTP '+r.status+' al solicitar '+pdfUrl);
+      if(ct && ct.indexOf('application/pdf')<0 && ct.indexOf('application/octet-stream')<0) {
+        throw new Error('Content-Type no PDF: '+ct);
+      }
+      return r.arrayBuffer().then(function(buf){
+        var b=new Uint8Array(buf), expected=binaryPDF();
+        if(b.length!==expected.length) throw new Error('Longitud del PDF distinto: externo '+b.length+', integrado '+expected.length);
+        for(var k=0;k<b.length;k++)if(b[k]!==expected[k])throw new Error('El PDF externo no coincide con el integrado (byte '+k+')');
+        if(ct.indexOf('application/pdf')<0)throw new Error('El archivo coincide, pero Content-Type='+ct+'; puede descargarse por configuración del servidor.');
+        if(seq!==validationSeq)return null;
+        externalStatus='OK: HTTP 200, Content-Type application/pdf y archivo idéntico al integrado ('+b.length+' bytes).';
+        el('externalStatus').textContent=externalStatus;
+        updateReport();
+        return true;
+      });
+    }).catch(function(e){
+      if(seq!==validationSeq)return null;
+      externalStatus='FALLO DE PUBLICACIÓN: '+(e.message||String(e))+'. Las pruebas 4, 6 y 9 no son concluyentes.';
+      el('externalStatus').textContent=externalStatus;
+      updateReport();
+      return false;
+    });
+  }
+  window.addEventListener('error',function(ev){
+    if(ev && ev.message) addJsError('JS: '+ev.message+' @ '+(ev.filename||'sin archivo')+':'+(ev.lineno||'?'));
+    else if(ev && ev.target && ev.target!==window) addJsError('Recurso: '+(ev.target.src||ev.target.href||ev.target.tagName||'desconocido'));
+  },true);
+  window.addEventListener('unhandledrejection',function(ev){
+    addJsError('Promesa: '+(ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason)));
+  });
+  function loadPdfJs() {
+    if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if(pdfJsLoadPromise) return pdfJsLoadPromise;
+    pdfJsLoadPromise = new Promise(function(resolve,reject){
+      var done=false, script=document.createElement('script');
+      var timer=setTimeout(function(){
+        finish(new Error('NO CONCLUYENTE: 15 s sin respuesta del cargador PDF.js (red, CSP o WebView).'));
+      },15000);
+      function finish(err){
+        if(done)return;
+        done=true;
+        clearTimeout(timer);
+        window.removeEventListener('pda-pdfjs-ready',onReady);
+        script.onerror=null;
+        if(err)reject(err);
+        else if(window.pdfjsLib)resolve(window.pdfjsLib);
+        else reject(new Error('NO CONCLUYENTE: cargador finalizo sin exponer PDF.js. '+(window.pdfjsLoadError||'')));
+      }
+      function onReady(){
+        if(window.pdfjsLib) finish(null);
+        else finish(new Error('NO CONCLUYENTE: '+(window.pdfjsLoadError||'fallaron el modulo local y CDN')));
+      }
+      window.addEventListener('pda-pdfjs-ready',onReady);
+      script.type='module';
+      script.src='./pdfjs-loader.mjs?attempt='+(++pdfJsLoaderAttempt);
+      script.onerror=function(){finish(new Error('NO CONCLUYENTE: no se pudo cargar el modulo ES de PDF.js.'))};
+      document.head.appendChild(script);
+      // No usar script.onload: puede dispararse antes de terminar import() asincrono.
+    }).catch(function(err){pdfJsLoadPromise=null;throw err;});
+    return pdfJsLoadPromise;
+  }
+  function doPDFJS() {
+    var holder=el('preview_pdfjs'), seq=++pdfJsSeq, finished=false;
+    if(pdfJsWatchdog)clearTimeout(pdfJsWatchdog);
+    holder.hidden=false;holder.innerHTML='';
+    pdfJsActive=true;
+    function active(){return seq===pdfJsSeq && !finished;}
+    function complete(message){
+      if(!active())return;
+      finished=true;pdfJsActive=false;
+      if(pdfJsWatchdog)clearTimeout(pdfJsWatchdog);
+      pdfJsWatchdog=null;
+      setStatus('pdfjs',message);
+    }
+    setStatus('pdfjs','Cargando PDF.js 6.5.438 legacy (local o CDN)...');
+    pdfJsWatchdog=setTimeout(function(){
+      complete('NO CONCLUYENTE: la prueba PDF.js supero 30 s (red, worker o render).');
+    },30000);
+    loadPdfJs().then(function(lib){
+      if(!active())return null;
+      lib.GlobalWorkerOptions.workerSrc=window.pdfjsWorkerURL;
+      setStatus('pdfjs','PDF.js '+(lib.version||'6.5.438')+' ('+(window.pdfjsSource||'desconocido')+') cargado. Renderizando...');
+      return lib.getDocument({data:new Uint8Array(binaryPDF()),isEvalSupported:false}).promise;
+    }).then(function(doc){return active() && doc ? doc.getPage(1) : null;}).then(function(page){
+      if(!active() || !page)return null;
+      var avail=Math.max(250,Math.min(holder.clientWidth-16,800));
+      var vp0=page.getViewport({scale:1});
+      var scale=Math.min(1.7,avail/vp0.width);
+      var vp=page.getViewport({scale:scale});
+      var canvas=document.createElement('canvas');
+      canvas.width=Math.floor(vp.width);canvas.height=Math.floor(vp.height);
+      canvas.style.width=Math.floor(vp.width)+'px';canvas.style.height=Math.floor(vp.height)+'px';
+      holder.appendChild(canvas);
+      return page.render({canvas:canvas,viewport:vp}).promise;
+    }).then(function(){
+      complete('PDF.js '+(window.pdfjsLib && window.pdfjsLib.version || '6.5.438')+' ('+(window.pdfjsSource||'desconocido')+') renderizo una pagina. CONFIRMA si se lee el texto antes de marcar Se ve.');
+    }).catch(function(err){
+      complete('ERROR / NO CONCLUYENTE PDF.js: '+(err && err.message ? err.message:String(err))+'. Un error de modulo, red o worker no demuestra incompatibilidad.');
+    });
+  }
+  // La pestaña se abre SIN espera asíncrona, para reducir los bloqueos de popups.
+  // Nunca inferir éxito de apertura: el usuario debe verificar que realmente lee el PDF.
+  function openBlobTab(){
+    pendingBlobAt=Date.now();persist();
+    var anchor=document.createElement('a');
+    anchor.href=getBlobURL();
+    anchor.target='_blank';
+    anchor.rel='noopener';
+    anchor.textContent='Abrir PDF Blob';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setStatus('open_blob_tab','Enlace blob: solicitado en pestaña nueva. No es posible confirmar si el navegador lo abrió; vuelve aquí y marca si lo viste, se descargó o se bloqueó.');
+  }
+  function closePdfModal(){
+    modalSeq++;
+    if(modalTimer){clearTimeout(modalTimer);modalTimer=null;}
+    el('pdfModal').hidden=true;
+    el('pdfModalBody').innerHTML='';
+    document.body.style.overflow='';
+    viewerTarget=null;
+    viewerToken='';
+    if(modalTrigger && modalTrigger.isConnected) modalTrigger.focus();
+    modalTrigger=null;
+  }
+  function showPdfModal(title){
+    if(!el('pdfModal').hidden)closePdfModal();
+    modalSeq++;
+    modalTrigger=document.activeElement;
+    el('pdfModalTitle').textContent=title;
+    el('pdfModalBody').innerHTML='';
+    el('pdfModalStatus').textContent='Preparando visor…';
+    el('pdfModal').hidden=false;
+    document.body.style.overflow='hidden';
+    el('closePdfModal').focus();
+    return modalSeq;
+  }
+  function modalStatus(key, message){
+    if(!el('pdfModal').hidden)el('pdfModalStatus').textContent=message;
+    setStatus(key,message);
+  }
+  function openNativeModal(){
+    var seq=showPdfModal('Prueba 10 · Modal iframe con Blob');
+    var frame=document.createElement('iframe');
+    frame.title='PDF ficticio nativo en modal';
+    frame.src=getBlobURL();
+    frame.addEventListener('load',function(){if(seq===modalSeq)modalStatus('iframe_blob_modal','iframe emitió load, NO demuestra visualización. Comprueba si puedes leer PDF DE PRUEBA - PDA.');});
+    frame.addEventListener('error',function(){if(seq===modalSeq)modalStatus('iframe_blob_modal','El iframe del modal emitió un error de carga.');});
+    el('pdfModalBody').appendChild(frame);
+    modalStatus('iframe_blob_modal','Modal abierto con iframe Blob. Comprueba visualmente el contenido y cierra el modal para marcar el resultado.');
+  }
+  function openIndependentViewerModal(){
+    if(!/^https?:$/.test(location.protocol)){
+      setStatus('pdfjs_viewer_modal','NO CONCLUYENTE: publica el HTML en HTTPS o localhost. El visor independiente utiliza postMessage de mismo origen.');
+      return;
+    }
+    var seq=showPdfModal('Prueba 11 · Visor PDF.js independiente');
+    viewerToken=String(Date.now())+'-'+Math.random().toString(36).slice(2);
+    var frame=document.createElement('iframe');
+    frame.title='Visor PDF.js HTML independiente';
+    frame.src='./pdfjs-viewer-independiente.html?channel='+encodeURIComponent(viewerToken);
+    viewerTarget=frame;
+    el('pdfModalBody').appendChild(frame);
+    modalStatus('pdfjs_viewer_modal','Cargando página HTML independiente. Esperando confirmación de conexión; no es aún una prueba de render.');
+    modalTimer=setTimeout(function(){
+      if(seq===modalSeq){
+        modalTimer=null;
+        modalStatus('pdfjs_viewer_modal','NO CONCLUYENTE: el visor independiente no ha finalizado el render en 35 s. Comprueba que has publicado pdfjs-viewer-independiente.html y los recursos PDF.js.');
+      }
+    },35000);
+  }
+  window.addEventListener('message',function(event){
+    if(el('pdfModal').hidden || !viewerTarget || event.source!==viewerTarget.contentWindow || event.origin!==location.origin)return;
+    var data=event.data;
+    if(!data || typeof data!=='object' || data.channel!==viewerToken)return;
+    if(data.type==='PDA_PDFJS_VIEWER_READY'){
+      // Pasamos únicamente los bytes del PDF ficticio, nunca tokens ni documentos privados.
+      try {
+        var bytes=new Uint8Array(binaryPDF());
+        viewerTarget.contentWindow.postMessage({type:'PDA_PDFJS_RENDER',channel:viewerToken,pdf:bytes.buffer},location.origin,[bytes.buffer]);
+        modalStatus('pdfjs_viewer_modal','El visor HTML independiente respondió. PDF ficticio enviado por postMessage; esperando render.');
+      }catch(e){modalStatus('pdfjs_viewer_modal','ERROR al enviar PDF al visor: '+(e.message||String(e)));}
+    } else if(data.type==='PDA_PDFJS_RENDERED'){
+      if(modalTimer){clearTimeout(modalTimer);modalTimer=null;}
+      modalStatus('pdfjs_viewer_modal','El visor independiente informó de render finalizado (PDF.js '+String(data.version||'?')+', origen '+String(data.source||'?')+'). Confirma visualmente que se lee el PDF antes de marcar Se ve. Worker real no verificado.');
+    } else if(data.type==='PDA_PDFJS_ERROR'){
+      if(modalTimer){clearTimeout(modalTimer);modalTimer=null;}
+      modalStatus('pdfjs_viewer_modal','ERROR / NO CONCLUYENTE del visor independiente: '+String(data.message||'error desconocido').slice(0,300));
+    }
+  });
+  el('closePdfModal').addEventListener('click',closePdfModal);
+  el('pdfModal').addEventListener('click',function(ev){if(ev.target===el('pdfModal'))closePdfModal();});
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape' && !el('pdfModal').hidden)closePdfModal();});
+
+  el('directLink').addEventListener('click',function(ev){
+    executed.open_direct=true;pendingDirectAt=Date.now();persist();updateReport();
+    setStatus('open_direct','Enlace directo pulsado. '+(externalStatus.indexOf('OK:')===0?'PDF externo validado.':'AVISO: PDF externo no validado; resultado no concluyente para compatibilidad.')+' Si la app bloquea pestañas externas, indícalo como Error.');
+  });
+  function execute(key) {
+    executed[key]=true;persist();updateReport();
+    try {
+      if (key==='open_blob_tab') openBlobTab();
+      if (key==='iframe_blob_modal') openNativeModal();
+      if (key==='pdfjs_viewer_modal') openIndependentViewerModal();
+      if (key==='iframe_blob') preview(key,'iframe',getBlobURL());
+      if (key==='object_blob') preview(key,'object',getBlobURL());
+      if (key==='embed_blob') preview(key,'embed',getBlobURL());
+      if (key==='iframe_http') {var generation=resetGeneration;preview(key,'iframe',pdfUrl);validateExternalPdf().then(function(ok){if(generation===resetGeneration && executed[key] && ok===false)setStatus(key,'AVISO: iframe lanzado pero el PDF externo no se ha validado; resultado no concluyente hasta comprobar publicacion.');});}
+      if (key==='iframe_data') preview(key,'iframe','data:application/pdf;base64,'+pdfB64);
+      if (key==='pdfjs') doPDFJS();
+    } catch(err){setStatus(key,'ERROR JavaScript: '+(err.message||String(err)));}
+  }
+  el('sameTabLink').addEventListener('click',function(){
+    executed.open_http_same=true;pendingSameTabAt=Date.now();persist();
+    setStatus('open_http_same','Navegación HTTPS solicitada EN ESTA PESTAÑA. Regresa mediante Atrás y marca el resultado. '+(externalStatus.indexOf('OK:')===0?'PDF externo validado.':'AVISO: PDF externo sin validar.'));
+  });
+  function resultsCount(){var n=0,i;for(i=0;i<keys.length;i++)if(selections[keys[i]] && selections[keys[i]]!=='no-probado')n++;return n;}
+  function restore() {
+    try {
+      var old=JSON.parse(localStorage.getItem('pda_pdf_diag_v3_4')||'{}');
+      if(old && old.selections) selections=old.selections;
+      if(old && old.technical) technical=old.technical;
+             if(old && typeof old.pendingDirectAt==='number' && Date.now()-old.pendingDirectAt<10*60*1000 && Date.now()>=old.pendingDirectAt && (!old.selections || !old.selections.open_direct || old.selections.open_direct==='no-probado')) pendingDirectAt=old.pendingDirectAt;
+       if(old && typeof old.pendingBlobAt==='number' && Date.now()-old.pendingBlobAt<10*60*1000 && Date.now()>=old.pendingBlobAt && (!old.selections || !old.selections.open_blob_tab || old.selections.open_blob_tab==='no-probado')) pendingBlobAt=old.pendingBlobAt;
+       if(old && typeof old.pendingSameTabAt==='number' && Date.now()-old.pendingSameTabAt<10*60*1000 && Date.now()>=old.pendingSameTabAt && (!old.selections || !old.selections.open_http_same || old.selections.open_http_same==='no-probado')) pendingSameTabAt=old.pendingSameTabAt;
+      // The restored click is only permission to answer; it is not a new execution.
+      executed={};
+      ['device','android','context','group','realResult','notes'].forEach(function(id){if(old[id])el(id).value=old[id];});
+    } catch(e) {/* El WebView puede bloquear localStorage. */}
+  }
+  function persist() {
+    try {
+             var old={selections:selections,technical:technical,executed:executed,pendingDirectAt:pendingDirectAt,pendingBlobAt:pendingBlobAt,pendingSameTabAt:pendingSameTabAt};
+      ['device','android','context','group','realResult','notes'].forEach(function(id){old[id]=el(id).value;});
+      localStorage.setItem('pda_pdf_diag_v3_4',JSON.stringify(old));
+    } catch(e) {/* No interfiere en las pruebas. */}
+  }
+  function drawButtons() {
+    keys.forEach(function(key){
+      var bar=document.querySelector('[data-result-for="'+key+'"]');bar.innerHTML='';
+      opts.forEach(function(option){
+        var b=document.createElement('button');b.type='button';b.className='result-button';
+        b.setAttribute('data-result',option[0]);b.textContent=option[1];
+        b.addEventListener('click',function(){
+          var pending=(key==='open_direct'?pendingDirectAt:key==='open_blob_tab'?pendingBlobAt:key==='open_http_same'?pendingSameTabAt:0);
+          if(!executed[key] && !(pending && Date.now()-pending<10*60*1000) && option[0]!=='no-probado'){el('shareStatus').textContent='Ejecuta la prueba antes de marcar el resultado.';return;}
+          selections[key]=option[0];
+          if(option[0]!=='no-probado'){if(key==='open_direct')pendingDirectAt=0;if(key==='open_blob_tab')pendingBlobAt=0;if(key==='open_http_same')pendingSameTabAt=0;}
+          persist();drawButtons();updateReport();
+        });
+        if((selections[key]||'no-probado')===option[0])b.className+=' active';
+        bar.appendChild(b);
+      });
+    });
+  }
+  function resultName(key){
+    var value=selections[key]||'no-probado';
+    for(var i=0;i<opts.length;i++)if(opts[i][0]===value)return opts[i][1];
+    return value;
+  }
+  function resetAll() {
+    var now=Date.now();
+    if(now>resetArmUntil){
+      resetArmUntil=now+6000;
+      el('resetBtn').textContent='Confirmar reinicio (segundo toque)';
+      el('shareStatus').textContent='Toca otra vez Reiniciar en 6 s para borrar las respuestas.';
+      if(resetArmTimer)clearTimeout(resetArmTimer);
+      resetArmTimer=setTimeout(function(){
+        if(Date.now()>=resetArmUntil){resetArmUntil=0;el('resetBtn').textContent='Reiniciar todas las pruebas';}
+      },6100);
+      return;
+    }
+    resetArmUntil=0;
+    if(resetArmTimer)clearTimeout(resetArmTimer);
+    resetArmTimer=null;
+    el('resetBtn').textContent='Reiniciar todas las pruebas';
+    closePdfModal();
+    resetGeneration++;
+    validationSeq++;
+    pdfJsSeq++;pdfJsActive=false;
+    if(pdfJsWatchdog)clearTimeout(pdfJsWatchdog);pdfJsWatchdog=null;
+    selections={};technical={};executed={};runtimeErrors=[];pendingDirectAt=0;pendingBlobAt=0;pendingSameTabAt=0;
+    if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl='';}
+    try{localStorage.removeItem('pda_pdf_diag_v3_4');}catch(e){}
+    ['device','android','context','group','realResult'].forEach(function(id){el(id).value='';});
+    el('notes').value='';
+    keys.forEach(function(key){
+             el('status_'+key).textContent=(key==='open_direct'||key==='open_blob_tab'||key==='open_http_same')?'Después de abrir, vuelve aquí y marca el resultado.':'Pendiente de ejecutar.';
+       if(['iframe_blob','object_blob','embed_blob','iframe_http','iframe_data','pdfjs'].indexOf(key)>=0){
+         var h=el('preview_'+key);h.hidden=true;h.innerHTML='';
+       }
+    });
+    el('shareStatus').textContent='Pruebas reiniciadas.';
+    validateExternalPdf();drawButtons();updateReport();
+  }
+  function describeBrowser() {
+    var ua=navigator.userAgent||'No disponible',android=(ua.match(/Android\s*([0-9.]+)/i)||[])[1]||'No detectable',
+        chrome=(ua.match(/(?:Chrome|CriOS)\/([0-9.]+)/i)||[])[1]||'No detectable';
+    var indicator=/;\s*wv\)/i.test(ua)||/\bwv\b/i.test(ua);
+    return {ua:ua,android:android,chrome:chrome,
+      guess:indicator?'El User-Agent contiene indicador de WebView (orientativo)':'Sin indicador WebView (no descarta WebView ni Custom Tabs)',
+      pdfViewer:typeof navigator.pdfViewerEnabled==='boolean'?String(navigator.pdfViewerEnabled):'No disponible',
+      url:location.href,protocol:location.protocol};
+  }
+  function makeReport() {
+    var d=describeBrowser(),out=[
+             'RESULTADO DIAGNOSTICO PDF PDA - VERSION 3.5',
+      'Fecha/hora local: '+new Date().toLocaleString(),
+      'Modelo: '+(el('device').value||'No indicado'),
+      'Android indicado: '+(el('android').value||'No indicado'),
+      'Contexto: '+(el('context').value||'No indicado'),
+      'Colectivo: '+(el('group').value||'No indicado'),
+      'Android según UA (DATO NO FIABLE, puede estar reducido): '+d.android,
+      'Chrome/Chromium según UA (orientativo): '+d.chrome,
+      'Indicador: '+d.guess,
+      'navigator.pdfViewerEnabled: '+d.pdfViewer+' (solo orientativo)',
+      'navigator.plugins.length: '+(navigator.plugins?navigator.plugins.length:'N/D'),
+      'navigator.mimeTypes PDF: '+(navigator.mimeTypes && navigator.mimeTypes['application/pdf']?'presente':'ausente / no expuesto'),
+      'devicePixelRatio: '+(window.devicePixelRatio||'N/D'),
+      'Pantalla: '+(screen.width||'N/D')+'x'+(screen.height||'N/D'),
+      'Verificación PDF externo: '+externalStatus,
+      'PDF.js worker: URL configurada no demuestra que se haya iniciado un worker real.',
+      'PDF.js detectado: '+(window.pdfjsLib ? ((window.pdfjsLib.version||'sin version')+'; origen '+(window.pdfjsSource||'desconocido')+'; worker '+(window.pdfjsWorkerURL||'no definido')) : 'No cargado / no probado'),
+      'URL de la prueba: '+d.url,
+      'User-Agent: '+d.ua,
+             '', 'RESULTADOS ('+resultsCount()+'/'+keys.length+' respondidas)' ];
+         keys.forEach(function(key){
+       var pending=(key==='open_direct'?pendingDirectAt:key==='open_blob_tab'?pendingBlobAt:key==='open_http_same'?pendingSameTabAt:0);
+       out.push(names[key]+' '+resultName(key)+' | Ejecutada en esta visita: '+(executed[key]?'SI':'NO')+(pending?' | enlace abierto antes de volver: SI (pendiente de valorar)':''));
+       if(technical[key])out.push('   Dato tecnico'+(executed[key]?'':' guardado de una visita anterior')+': '+technical[key]);
+     });
+    out.push('', 'ERRORES JAVASCRIPT DETECTADOS ('+runtimeErrors.length+')');
+    runtimeErrors.forEach(function(e){out.push(' - '+e);});
+    out.push('','Web corporativa: '+(el('realResult').value||'No comprobado'));
+    out.push('Observaciones: '+(el('notes').value.trim()||'Sin observaciones'));
+    out.push('','Nota: los resultados son valoraciones visuales del usuario. Una descarga no confirma ni descarta el soporte PDF.js.');
+    return out.join('\n');
+  }
+  function updateReport(){el('report').value=makeReport();el('counter').textContent=resultsCount()+' de '+keys.length+' pruebas respondidas';}
+  function fallbackCopy(){
+    var t=el('report');t.focus();t.select();try{t.setSelectionRange(0,t.value.length);}catch(e){}
+    var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){}
+    el('shareStatus').textContent=ok?'Informe copiado. Pégalo en Teams o en un correo.':'Selecciona el texto del informe y cópialo manteniendo pulsado.';
+  }
+  function copy(){updateReport();if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(el('report').value).then(function(){el('shareStatus').textContent='Informe copiado. Pégalo en Teams o en un correo.';},fallbackCopy);}else fallbackCopy();}
+  function share(){
+    updateReport();
+    if(navigator.share){navigator.share({title:'Diagnóstico PDF PDA',text:el('report').value}).then(function(){el('shareStatus').textContent='Diálogo de compartir completado.';}).catch(function(e){el('shareStatus').textContent='Compartir cancelado o bloqueado. Usa Copiar informe.';});}
+    else {copy();}
+  }
+  function download(){
+    updateReport();
+    var b=new Blob([el('report').value],{type:'text/plain;charset=utf-8'}),u=URL.createObjectURL(b);
+    var a=document.createElement('a');a.href=u;a.download='resultado-pdf-pda.txt';document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(u);},30000);
+    el('shareStatus').textContent='Descarga solicitada. Si la app la bloquea, utiliza Copiar informe.';
+  }
+  function init() {
+    restore();drawButtons();
+    document.querySelectorAll('[data-run]').forEach(function(b){b.addEventListener('click',function(){execute(b.getAttribute('data-run'));});});
+    ['device','android','context','group','realResult','notes'].forEach(function(id){el(id).addEventListener('change',function(){persist();updateReport();});el(id).addEventListener('input',function(){persist();updateReport();});});
+    el('resetBtn').addEventListener('click',resetAll);
+    el('shareBtn').addEventListener('click',share);el('copyBtn').addEventListener('click',copy);el('downloadBtn').addEventListener('click',download);
+    var d=describeBrowser();el('browserInfo').textContent='UA: Android '+d.android+' · Chrome/Chromium '+d.chrome+' · '+d.guess+'.';
+    keys.forEach(function(key){if(technical[key])el('status_'+key).textContent=technical[key];});
+         if(pendingDirectAt) el('status_open_direct').textContent='Pulsaste Abrir HTTPS en otra pestaña antes de regresar. Ahora marca lo que ocurrió.';
+     if(pendingBlobAt) el('status_open_blob_tab').textContent='Pulsaste Abrir Blob en otra pestaña antes de regresar. Ahora marca lo que ocurrió.';
+     if(pendingSameTabAt) el('status_open_http_same').textContent='Has vuelto desde el PDF HTTPS abierto en esta pestaña. Ahora marca lo que ocurrió.';
+    validateExternalPdf();
+    updateReport();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
